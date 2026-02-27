@@ -1,7 +1,9 @@
 {
   "buildCommand": "npm run build",
   "env": {
-    "PRISMA_SKIP_ENGINE_CHECK": "true"
+    "PRISMA_SKIP_ENGINE_CHECK": "true",
+    "NEXTAUTH_URL": "https://$NEXT_PUBLIC_VERCEL_URL",
+    "NEXTAUTH_SECRET": "$NEXTAUTH_SECRET"
   },
   "crons": [
     {

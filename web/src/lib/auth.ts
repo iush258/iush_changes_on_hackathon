@@ -3,8 +3,21 @@ import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+// Get the auth secret - support both AUTH_SECRET and NEXTAUTH_SECRET for compatibility
+const getAuthSecret = () => {
+    const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!authSecret) {
+        console.warn("[Auth] WARNING: No AUTH_SECRET or NEXTAUTH_SECRET environment variable set!");
+        console.warn("[Auth] This will cause authentication to fail in production!");
+    } else {
+        console.log("[Auth] AUTH_SECRET is configured");
+    }
+    return authSecret;
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     trustHost: true,
+    secret: getAuthSecret(),
     providers: [
         Credentials({
             name: "credentials",

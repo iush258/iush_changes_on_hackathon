@@ -8,6 +8,11 @@ const protectedRoutes: Record<string, string[]> = {
     "/admin": ["ADMIN", "SUPERADMIN"],
 };
 
+// Get the auth secret - support both AUTH_SECRET and NEXTAUTH_SECRET for compatibility
+const getAuthSecret = () => {
+    return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+};
+
 export default async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
@@ -20,7 +25,7 @@ export default async function proxy(req: NextRequest) {
 
     const token = await getToken({
         req,
-        secret: process.env.AUTH_SECRET,
+        secret: getAuthSecret(),
     });
 
     if (!token) {
