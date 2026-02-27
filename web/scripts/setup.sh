@@ -35,9 +35,11 @@ echo "==> Generating Prisma client"
 npx prisma generate
 
 if grep -q '^DATABASE_URL=' .env; then
-  echo "==> Applying DB migrations"
-  npx prisma migrate deploy || {
-    echo "WARN: Migration deploy failed. Ensure PostgreSQL is running and DATABASE_URL is valid."
+  echo "==> Synchronizing database schema with Neon/Supabase"
+  npx prisma db push --skip-generate || {
+    echo "WARN: Database sync failed. Ensure PostgreSQL is running and DATABASE_URL is valid."
+    echo "      For Neon: Use pooling endpoint (ends with -pooler)"
+    echo "      For Supabase: Ensure database is running in dashboard"
   }
 else
   echo "WARN: DATABASE_URL missing in .env. Skipping DB migration step."
