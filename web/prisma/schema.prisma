@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String?
+  role      String   @default("PARTICIPANT") // PARTICIPANT, JUDGE, ADMIN
+  teamId    String?
+  teamName  String?
+  registrationMode String? @default("ONLINE") // ONLINE, SUPERADMIN
+  team      Team?    @relation(fields: [teamId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Team {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  collegeName        String
+  teamLeaderName     String
+  teamLeaderEmail    String   @unique
+  teamLeaderPhone    String
+  registrationSource String   @default("ONLINE") // ONLINE, SUPERADMIN
+  registrationMode   String   @default("ONLINE") // ONLINE, SUPERADMIN
+  problemStatementId String?
+  problemStatement   ProblemStatement? @relation(fields: [problemStatementId], references: [id])
+  psStatus           String   @default("NONE") // NONE, PENDING, LOCKED
+  psSelectedAt       DateTime?
+  psLockedAt         DateTime?
+  repoUrl            String?
+  superadminScore    Int?
+  superadminScoredBy String?
+  superadminScoredAt DateTime?
+  rawCommitCount       Int      @default(0)
+  countedCommitCount   Int      @default(0) // capped at 5
+  leaderCommitCount    Int      @default(0)
+  leaderCommitValidated Boolean @default(false)
+  lastCommitSyncAt     DateTime?
+  registrationApproved Boolean @default(false)
+  paymentVerified      Boolean @default(false)
+  
+  // Payment related fields
+  paymentMode        String?  @default("QR") // QR, DISABLED
+  paymentStatus      String?  @default("PENDING") // PENDING, VERIFIED, REJECTED
+  transactionId      String?
+  feePerMember       Int?     // Calculated fee per member
+  totalAmount        Int?     // Total amount (feePerMember * memberCount)
+  paymentTier        String?  @default("EARLY_BIRD") // EARLY_BIRD, REGULAR
+  paymentVerifiedAt  DateTime?
+  
+  members            User[]
+  scores             Score[]
+  notifications      Notification[]
+  commitSnapshots    TeamCommitSnapshot[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Sponsor {
+  id           String   @id @default(cuid())
+  name         String
+  tier         String
+  websiteUrl   String?
+  isVisible    Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isVisible, displayOrder])
+}
+
+model ProblemStatement {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  difficulty  String   @default("MEDIUM") // EASY, MEDIUM, HARD
+  tags        String   @default("[]") // JSON array stored as string
+  teams       Team[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Score {
+  id              String @id @default(cuid())
+  teamId          String
+  teamName        String?
+  team            Team   @relation(fields: [teamId], references: [id])
+  commitFrequency Int    @default(0)
+  codeQuality     Int    @default(0)
+  problemRelevance Int   @default(0)
+  innovation      Int    @default(0)
+  total           Int    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([teamId])
+}
+
+model TeamCommitSnapshot {
+  id                   String   @id @default(cuid())
+  teamId               String
+  team                 Team     @relation(fields: [teamId], references: [id])
+  checkedAt            DateTime @default(now())
+  rawCommitCount       Int      @default(0)
+  countedCommitCount   Int      @default(0) // capped at 5
+  leaderEmail          String
+  leaderCommitCount    Int      @default(0)
+  leaderCommitValidated Boolean @default(false)
+  windowHours          Int      @default(2)
+  createdAt            DateTime @default(now())
+
+  @@index([teamId, checkedAt])
+}
+
+model HackathonPaymentConfig {
+  id                Int      @id @default(1)
+  paymentMode       String   @default("QR") // QR, DISABLED
+  qrCodeUrl         String?
+  earlyBirdLimit    Int      @default(10)
+  earlyBirdFee      Int      @default(110)
+  regularFee       Int      @default(150)
+  totalTeamLimit    Int      @default(100)
+  onlineTeamLimit   Int      @default(80)
+  adminAddedTeams  Int      @default(0)
+  updatedAt        DateTime @updatedAt
+}

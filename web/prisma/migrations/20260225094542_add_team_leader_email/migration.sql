@@ -1,0 +1,1 @@
+-- No-op migration retained to preserve migration history ordering after PostgreSQL conversion.
